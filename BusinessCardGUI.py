@@ -44,9 +44,6 @@ foiling_options = {
     "Single Side Per Sheet": 21
 }
 
-
-
-
 # Create the main window
 root = tk.Tk()
 root.title("Business Card Cost Calculator")
@@ -60,12 +57,6 @@ for i in range(10):
     grid_frame.grid_rowconfigure(i, weight=1, minsize=50)
 for j in range(4):
     grid_frame.grid_columnconfigure(j, weight=1, minsize=50)
-
-# Create widgets with grid
-for i in range(10):
-    for j in range(4):
-        label = tk.Label(root, text=f"({i}, {j})", borderwidth=1, relief="solid")
-        label.grid(row=i, column=j, padx=1, pady=1, sticky="nsew")
 
 # Create a Combobox for paper selection
 paper_label = ttk.Label(root, text="Paper:")
@@ -111,17 +102,17 @@ side_combobox.grid(row=4, column=1, padx=10, pady=10)
 side_combobox['values'] = ["Double Side Per Sheet", "Single Side Per Sheet"]
 side_combobox.current(0)
 
-foiling_Checkbox = tk.BooleanVar()
-checkbox = tk.Checkbutton(root, text="Foiling", variable=foiling_Checkbox)
-checkbox.grid(row=5, column=1, padx=10, pady=10)
+foiling_var = tk.BooleanVar()
+foiling_Checkbox = tk.Checkbutton(root, text="Foiling", variable=foiling_var)
+foiling_Checkbox.grid(row=5, column=1, padx=10, pady=10, sticky="w")
 
-lamination_Checkbox = tk.BooleanVar()
-checkbox = tk.Checkbutton(root, text="Lamination", variable=lamination_Checkbox)
-checkbox.grid(row=6, column=1, padx=10, pady=10)
+lamination_var = tk.BooleanVar()
+lamination_Checkbox = tk.Checkbutton(root, text="Lamination", variable=lamination_var)
+lamination_Checkbox.grid(row=6, column=1, padx=10, pady=10, sticky="w")
 
-spot_uv = tk.BooleanVar()
-checkbox = tk.Checkbutton(root, text="Spot UV", variable=spot_uv)
-checkbox.grid(row=7, column=1, padx=10, pady=10)
+spot_uv_var = tk.BooleanVar()
+spot_uv_checkbox = tk.Checkbutton(root, text="Spot UV", variable=spot_uv_var)
+spot_uv_checkbox.grid(row=7, column=1, padx=10, pady=10, sticky="w")
 
 # Create a label for the total cost
 cost_label_window = ttk.Label(root, text="Total Cost: 0.00 AED")
@@ -178,27 +169,47 @@ def calculate_price_per_sheet(paper, gsm):
     return price_per_sheet
 
 
-def calculate_cost(paper, gsm, color_option, side_option):
+
+def calculate_cost(paper, gsm, color_option, side_option, lamination_checked, spot_uv_checked, foiling_checked):
     # Find the price per sheet based on the user's selections
     price_per_sheet = calculate_price_per_sheet(paper, gsm)
     quantity = calculate_sheet_quantity()
 
     # Calculate the cost of printing based on the user's color and side options
-    printing_cost = quantity * price_per_sheet * printing_options[color_option][side_option]
-    lamination_cost = quantity * lamination_options[color_option][side_option]
-    spot_uv_cost = quantity * spot_uv_options[side_option]
-    foiling_cost = quantity * foiling_options[side_option]
+    printing_cost_basic = quantity * price_per_sheet * printing_options[color_option][side_option]
     cutting_Packing = 20
 
+    # Calculate the cost of lamination, spot UV, and foiling if their corresponding checkboxes are checked
+    lamination_cost = 0
+    spot_uv_cost = 0
+    foiling_cost = 0
+    if lamination_checked:
+        lamination_cost = quantity * lamination_options[color_option][side_option]
+    if spot_uv_checked:
+        spot_uv_cost = quantity * spot_uv_options[side_option]
+    if foiling_checked:
+        foiling_cost = quantity * foiling_options[side_option]
+
     # Calculate the total cost
-    printing_cost = printing_cost + lamination_cost + spot_uv_cost + foiling_cost + cutting_Packing
-    total_cost = 2*printing_cost
+    printing_cost = printing_cost_basic + lamination_cost + spot_uv_cost + foiling_cost + cutting_Packing
+    total_cost = 2 * printing_cost
+
+    # Print the variables to help catch any errors in the addition logic
+    print(f"price_per_sheet: {price_per_sheet}")
+    print(f"quantity: {quantity}")
+    print(f"printing_cost_basic: {printing_cost_basic}")
+    print(f"cutting_Packing: {cutting_Packing}")
+    print(f"lamination_cost: {lamination_cost}")
+    print(f"spot_uv_cost: {spot_uv_cost}")
+    print(f"foiling_cost: {foiling_cost}")
+    print(f"printing_cost: {printing_cost}")
+    print(f"total_cost: {total_cost}")
+
     return total_cost
 
-# Populate the Comboboxes with data
 populate_comboboxes()
 
-def calculate_cost_from_selections(paper_combobox, gsm_combobox, color_listbox, side_combobox):
+def calculate_cost_from_selections(paper_combobox, gsm_combobox, color_listbox, side_combobox, lamination_var, spot_uv_var, foiling_var):
     # Get the user's selections from the GUI widgets
     paper = paper_combobox.get()
     gsm = int(gsm_combobox.get())
@@ -206,9 +217,27 @@ def calculate_cost_from_selections(paper_combobox, gsm_combobox, color_listbox, 
     side_option = side_combobox.get()
 
     # Calculate the cost based on the user's selections
-    cost = calculate_cost(paper, gsm, color_option, side_option)
+    cost = calculate_cost(paper, gsm, color_option, side_option, lamination_var.get(), spot_uv_var.get(), foiling_var.get())
+    print(cost)
+    # Create the description for the invoice
+    description = f"Product: Business Cards\nPaper: {paper}\nGSM: {gsm}\nColor: {color_option}\nSides: {side_option}\nLamination: {lamination_var.get()}\nSpot UV: {spot_uv_var.get()}\nFoiling: {foiling_var.get()}"
 
-def create_summary(paper_combobox, gsm_combobox, quantity_entry, color_listbox, side_combobox):
+    # Create the dictionary with description and total cost
+    invoice = {
+        'description': description,
+        'total_cost': cost
+    }
+
+    # Write the invoice information to a file
+    filename = 'invoice.txt'
+    with open(filename, 'w') as f:
+        f.write(f"Invoice:\n{invoice['description']}\nTotal Cost: {invoice['total_cost']}\n\n")
+
+    # Auto-download the text file
+    os.system(f'start {filename}')
+
+
+def create_summary(paper_combobox, gsm_combobox, quantity_entry, color_listbox, side_combobox, lamination_var, spot_uv_var, foiling_var):
     # Get the user's selections from the GUI widgets
     paper = paper_combobox.get()
     gsm = int(gsm_combobox.get())
@@ -220,13 +249,17 @@ def create_summary(paper_combobox, gsm_combobox, quantity_entry, color_listbox, 
 
     # Calculate the cost of printing based on the user's color and side options
     printing_cost = quantity * price_per_sheet * printing_options[color_option][side_option]
-    lamination_cost = quantity * lamination_options[color_option][side_option]
-    spot_uv_cost = quantity * spot_uv_options[side_option]
-    foiling_cost = foiling_options[side_option]
     cutting_packing_cost = 20
+
+    # Calculate the cost of lamination, spot UV, and foiling if their corresponding checkboxes are checked
+    lamination_cost = quantity * lamination_options[color_option][side_option] if lamination_var.get() else 0
+    spot_uv_cost = quantity * spot_uv_options[side_option] if spot_uv_var.get() else 0
+    foiling_cost = quantity* foiling_options[side_option] if foiling_var.get() else 0
+
     printing_cost_with_all_option = printing_cost + lamination_cost + spot_uv_cost + foiling_cost + cutting_packing_cost
+
     # Calculate the total cost
-    total_cost = 2 * (printing_cost + lamination_cost + spot_uv_cost + foiling_cost + cutting_packing_cost)
+    total_cost = 2 * printing_cost_with_all_option
 
     # Create a summary of the variables and their values
     summary = f"Summary:\n"
@@ -236,14 +269,16 @@ def create_summary(paper_combobox, gsm_combobox, quantity_entry, color_listbox, 
     summary += f"Color Option: {color_option}\n"
     summary += f"Side Option: {side_option}\n"
     summary += f"Printing Cost: {printing_cost:.2f} AED\n"
-    summary += f"Lamination Cost: {quantity} * {lamination_options[color_option][side_option]} = {lamination_cost:.2f} AED\n"
-    summary += f"Spot UV Cost: {quantity} * {spot_uv_options[side_option]} = {spot_uv_cost:.2f} AED\n"
-    summary += f"Foiling Cost: {quantity} *{foiling_options[side_option]:.2f} AED\n"
+    if lamination_var.get():
+        summary += f"Lamination Cost: {quantity} * {lamination_options[color_option][side_option]} = {lamination_cost:.2f} AED\n"
+    if spot_uv_var.get():
+        summary += f"Spot UV Cost: {quantity} * {spot_uv_options[side_option]} = {spot_uv_cost:.2f} AED\n"
+    if foiling_var.get():
+        summary += f"Foiling Cost: {quantity} * {foiling_options[side_option]} = {foiling_cost:.2f} AED\n"
     summary += f"Cutting and Packing Cost: {cutting_packing_cost:.2f} AED\n"
     summary += f"Printing Cost with all option: {printing_cost_with_all_option:.2f} AED\n"
     summary += f"Total Cost: {total_cost:.2f} AED\n"
 
-    
     # Update the cost label window with the total cost
     cost_label_window.config(text=f"Total Cost: {total_cost:.2f} AED")
 
@@ -255,25 +290,28 @@ def create_summary(paper_combobox, gsm_combobox, quantity_entry, color_listbox, 
     # Auto-download the text file
     os.system(f'start {filename}')
 
-
-
-
 # Create the "Summary Cost" button
 calculate_button = ttk.Button(root, text="Summary Cost", command=lambda: create_summary(
     paper_combobox,
     gsm_combobox,
     quantity_entry,
     color_listbox,
-    side_combobox
+    side_combobox,
+    lamination_var,
+    spot_uv_var,
+    foiling_var
 ))
 calculate_button.grid(row=9, column=0,padx=10, pady=10)
 
 # Create the "Calculate Cost" button
-calculate_button = ttk.Button(root, text="Calculate Cost", command=lambda: calculate_cost_from_selections(
+calculate_button = ttk.Button(root, text="Create Description & Total Cost", command=lambda: calculate_cost_from_selections(
     paper_combobox,
     gsm_combobox,
     color_listbox,
-    side_combobox
+    side_combobox,
+    lamination_var,
+    spot_uv_var,
+    foiling_var
 ))
 calculate_button.grid(row=9, column=2, padx=10, pady=10)
  

@@ -1,0 +1,11 @@
+Invoice:
+Product: Business Cards
+Paper: Sona
+GSM: 300
+Color: Colored
+Sides: Double Side Per Sheet
+Lamination: True
+Spot UV: True
+Foiling: True
+Total Cost: 3625.12
+
