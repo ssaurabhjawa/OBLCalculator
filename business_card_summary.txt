@@ -1,0 +1,13 @@
+Summary:
+Paper: Linen
+GSM: 350
+Quantity: 48
+Color Option: Colored
+Side Option: Double Side Per Sheet
+Printing Cost: 14.40 AED
+Lamination Cost: 48 * 0.4 = 19.20 AED
+Spot UV Cost: 48 * 15.625 = 750.00 AED
+Foiling Cost: 48 *21.00 AED
+Cutting and Packing Cost: 20.00 AED
+Printing Cost with all option: 824.60 AED
+Total Cost: 1649.20 AED
